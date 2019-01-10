@@ -2,7 +2,7 @@
   "name": "public-reactjs",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://nganttk89.github.io/public-reactjs/",
+  "homepage": "https://nganttk89.github.io/public-reactjs/index.html",
   "dependencies": {
     "gh-pages": "^2.0.1",
     "react": "^16.7.0",
