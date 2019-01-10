@@ -1,28 +1,97 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
+import InfiniteScroll from './components/InfiniteScroll'
+import qwest from 'qwest';
 
+
+const api = {
+  baseUrl: 'https://api.soundcloud.com',
+  client_id: 'caf73ef1e709f839664ab82bef40fa96'
+};
 class App extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      tracks: [],
+      hasMoreItems: true,
+      nextHref: null
+    };
+  }
+
+  loadItems(page) {
+    var self = this;
+
+    var url = api.baseUrl + '/users/8665091/favorites';
+    if(this.state.nextHref) {
+      url = this.state.nextHref;
+    }
+
+    qwest.get(url, {
+      client_id: api.client_id,
+      linked_partitioning: 1,
+      page_size: 10
+    }, {
+      cache: true
+    })
+      .then(function(xhr, resp) {
+        if(resp) {
+          var tracks = self.state.tracks;
+          resp.collection.map((track) => {
+            if(track.artwork_url == null) {
+              track.artwork_url = track.user.avatar_url;
+            }
+
+            tracks.push(track);
+          });
+
+          if(resp.next_href) {
+            self.setState({
+              tracks: tracks,
+              nextHref: resp.next_href
+            });
+          } else {
+            self.setState({
+              hasMoreItems: false
+            });
+          }
+        }
+      });
+  }
+
   render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
+    const loader = <div className="loader">Loading ...</div>;
+
+    var items = [];
+    this.state.tracks.map((track, i) => {
+      items.push(
+        <div className="track" key={i}>
+          <a href={track.permalink_url} target="_blank">
+            <img src={track.artwork_url} />
+            <p className="title">{track.title}</p>
           </a>
-        </header>
+        </div>
+      );
+    });
+
+    return (
+      <div>
+        <div>
+          <InfiniteScroll
+            className='container'
+            pageStart={0}
+            loadMore={this.loadItems.bind(this)}
+            hasMore={this.state.hasMoreItems}
+            loader={loader}>
+
+            <div className="tracks">
+              {items}
+            </div>
+          </InfiniteScroll>
+        </div>
       </div>
     );
   }
-}
+};
 
 export default App;
